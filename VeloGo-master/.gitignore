@@ -34,3 +34,5 @@ uploads/
 scratch/
 test-results/
 playwright-report/
+backend/data/*.mv.db
+backend/data/*.trace.db
