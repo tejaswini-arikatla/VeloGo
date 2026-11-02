@@ -1,0 +1,36 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Java / Maven
+backend/target/
+backend/*.log
+backend/.flattened-pom.xml
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
+frontend/dist-ssr/
+frontend/*.local
+
+# Environment variables & secrets
+.env
+*.env.local
+backend/src/main/resources/application-secret.yml
+
+# Uploaded documents / temp
+uploads/
+scratch/
+test-results/
+playwright-report/
