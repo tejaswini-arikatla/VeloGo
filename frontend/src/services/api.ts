@@ -375,6 +375,47 @@ export const api = {
       }),
   },
 
+  features: {
+    listData: (featureKey?: string) => {
+      const query = featureKey ? `?featureKey=${encodeURIComponent(featureKey)}` : '';
+      return request<Array<{
+        id: string;
+        featureKey: string;
+        title?: string;
+        payload: unknown;
+        createdAt: string;
+        updatedAt: string;
+      }>>(`/features/data${query}`);
+    },
+
+    getData: (id: string) =>
+      request<{
+        id: string;
+        featureKey: string;
+        title?: string;
+        payload: unknown;
+        createdAt: string;
+        updatedAt: string;
+      }>(`/features/data/${encodeURIComponent(id)}`),
+
+    createData: (data: { featureKey: string; title?: string; payload: unknown }) =>
+      request('/features/data', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    updateData: (id: string, data: { featureKey: string; title?: string; payload: unknown }) =>
+      request(`/features/data/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    deleteData: (id: string) =>
+      request<void>(`/features/data/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }),
+  },
+
   geo: {
     search: (q: string, lat?: number, lng?: number) => {
       const p = new URLSearchParams({ q });

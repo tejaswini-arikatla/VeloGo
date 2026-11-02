@@ -30,3 +30,15 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Expanded customer feature modules
+
+The customer feature suite now includes additional planning and personal travel tools such as
+fare splitting, eco impact estimates, accessibility profiles, commute planning, personal travel
+records, checklists, vehicle comparisons, travel budgets, favorite locations, manual trip
+check-ins, group trip planning, airport transfer planning and reminders.
+
+See [`EXPANSION_MODULES_GUIDE.md`](../EXPANSION_MODULES_GUIDE.md) for module behaviour, local
+storage boundaries, export and backup notes, verification commands and a suggested Spring Boot
+integration plan. The additional prototype records are stored in the browser and are not a
+replacement for server-side persistence or official booking and payment records.

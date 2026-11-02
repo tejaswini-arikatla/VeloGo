@@ -15,6 +15,7 @@ import {
   Car,
   Building2,
   Ticket,
+  Sparkles,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -68,6 +69,12 @@ export const Navbar: React.FC = () => {
                   className="text-sm font-semibold text-slate-700 hover:text-brand-600 transition-colors flex items-center gap-1.5"
                 >
                   <Clock className="w-4 h-4" /> Ride History
+                </Link>
+                <Link
+                  to="/customer/features"
+                  className="text-sm font-semibold text-slate-700 hover:text-brand-600 transition-colors flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4" /> More Features
                 </Link>
               </>
             )}
@@ -205,6 +212,13 @@ export const Navbar: React.FC = () => {
                 className="block text-base font-medium text-slate-900 py-2"
               >
                 Ride History
+              </Link>
+              <Link
+                to="/customer/features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-base font-medium text-slate-900 py-2"
+              >
+                More Features
               </Link>
             </>
           )}
