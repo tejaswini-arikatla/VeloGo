@@ -13,6 +13,8 @@ import { LoginPage, CustomerRegisterPage, CaptainRegisterPage } from './pages/Au
 import { SafetyPage } from './pages/SafetyPage';
 import { CorporateDashboardPage } from './pages/CorporateDashboardPage';
 import { SubscriptionPlansPage } from './pages/SubscriptionPlansPage';
+import { MoreFeaturesPage } from './pages/MoreFeaturesPage';
+import { FeatureSuitePage } from './features/FeatureSuitePage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 const queryClient = new QueryClient();
@@ -60,6 +62,22 @@ export const App: React.FC = () => {
                     <Route path="/register" element={<CustomerRegisterPage />} />
                     <Route path="/captain/register" element={<CaptainRegisterPage />} />
                     <Route path="/safety" element={<SafetyPage />} />
+                    <Route
+                      path="/customer/features"
+                      element={
+                        <ProtectedRoute allowedRoles={['ROLE_CUSTOMER', 'ROLE_ADMIN']}>
+                          <MoreFeaturesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/customer/feature-suite"
+                      element={
+                        <ProtectedRoute allowedRoles={['ROLE_CUSTOMER', 'ROLE_ADMIN']}>
+                          <FeatureSuitePage />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/subscriptions" element={<SubscriptionPlansPage />} />
                     <Route
                       path="/corporate"

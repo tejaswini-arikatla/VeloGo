@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: velogo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: velogodb
+      POSTGRES_USER: velogo_user
+      POSTGRES_PASSWORD: velogo_secure_pass_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U velogo_user -d velogodb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: velogo-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: velogo-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/velogodb
+      DB_USER: velogo_user
+      DB_PASSWORD: velogo_secure_pass_2026
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      RAZORPAY_KEY_ID: rzp_test_velogo123456
+      RAZORPAY_KEY_SECRET: velogo_secret_test_key
+      PAYMENT_SIMULATE_MODE: "true"
+      OSRM_URL: https://router.project-osrm.org
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: velogo-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+  redis_data:

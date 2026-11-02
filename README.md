@@ -227,24 +227,33 @@ VeloGo is designed to run locally right out of the box with **zero required exte
 - **Node.js 20+** and **npm**
 
 ### Step 1: Start the Backend (Port 8080)
-Open a terminal in the `backend/` directory:
-```bash
+Open PowerShell in the extracted `VeloGo-master` project root (the folder containing `backend`, `frontend`, and `docker-compose.yml`):
+```powershell
 cd backend
 mvn spring-boot:run
 ```
-- Flyway automatically initializes the embedded database (`backend/data/velogodb.*`) and seeds all demo accounts and fare rules.
-- Tomcat will start listening on `http://localhost:8080`.
-- Swagger UI will be available at `http://localhost:8080/swagger-ui.html`.
+- Flyway automatically initializes the embedded H2 database (`backend/data/velogodb.*`) and seeds demo accounts and fare rules.
+- The backend listens at `http://localhost:8080`.
+- Swagger UI: `http://localhost:8080/swagger-ui.html`.
+- Health check: `http://localhost:8080/actuator/health`.
 
 ### Step 2: Start the Frontend (Port 5173)
-Open a second terminal in the `frontend/` directory:
-```bash
+Open a **second** PowerShell window. Navigate to the same extracted project root, then:
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
-- Open your browser to `http://localhost:5173`.
-- The Vite proxy will route all `/api` and `/ws` requests directly to `http://localhost:8080`.
+- Open `http://localhost:5173`.
+- The Vite development proxy forwards `/api` REST calls and `/ws` WebSocket traffic to `http://localhost:8080`.
+
+**Important folder note:** If PowerShell already shows `...\\VeloGo-master>` in the prompt, you are already at the project root. Run `cd frontend`—do not run `cd VeloGo-master\\frontend` again. Run `npm install` only after entering the folder that contains `package.json`.
+
+### Step 3: Confirm the connection
+1. Keep both terminal windows running.
+2. Open `http://localhost:8080/actuator/health`; the backend should return a JSON status of `UP`.
+3. Open `http://localhost:5173` and use the demo login buttons. The frontend calls the backend through the Vite proxy.
+4. Swagger documents the API at `http://localhost:8080/swagger-ui.html`.
 
 ---
 
@@ -305,6 +314,21 @@ node scratch/e2e_api_test.mjs
 
 ---
 
+## Cloud persistence for the extended feature suite
+
+The ride-booking, authentication, captain, customer, payment, support, admin, and geo flows already use the Spring Boot REST API. The expanded feature suite also includes an account-scoped cloud data API:
+
+- `GET /api/v1/features/data` — list the signed-in customer's saved feature records.
+- `GET /api/v1/features/data?featureKey=feature-suite-backup` — list feature-suite backups.
+- `POST /api/v1/features/data` — create a record.
+- `GET /api/v1/features/data/{id}` — read one owned record.
+- `PUT /api/v1/features/data/{id}` — update one owned record.
+- `DELETE /api/v1/features/data/{id}` — delete one owned record.
+
+All endpoints require a customer JWT. The server derives the owner from the authenticated principal; clients cannot submit another user's ID. Payloads are JSON documents capped at 100 KB. Flyway migration `V7__feature_suite_cloud_data.sql` creates the table and indexes.
+
+The frontend exposes these endpoints through `api.features` in `frontend/src/services/api.ts`. `frontend/src/features/featureCloudSync.ts` provides explicit `saveFeatureSuiteToCloud(userId)` and `restoreFeatureSuiteFromCloud(userId)` helpers. Restore is an explicit action and validates the account ID before replacing local feature-suite records. Existing local feature modules remain usable offline; this cloud backup helper does not silently turn every module into always-on background sync.
+
 ## 10. REST API & Swagger Documentation
 
 When the backend is running, access interactive OpenAPI documentation at:
@@ -348,3 +372,6 @@ When the backend is running, access interactive OpenAPI documentation at:
 
 ## License
 MIT License. Created as an original mobility engineering project.
+## Advanced customer feature suite
+
+See [FEATURE_SUITE_GUIDE.md](FEATURE_SUITE_GUIDE.md) for the eight additional customer-side modules, local data behaviour, verification commands, and production integration notes. The suite is available at `/customer/feature-suite` after customer sign-in.
