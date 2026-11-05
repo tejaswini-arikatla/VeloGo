@@ -96,6 +96,21 @@ class FareCalculationServiceTest {
     }
 
     @Test
+    void testSurgePricingCalculationDuringPeakHours() {
+        LocalDateTime morningPeak = LocalDateTime.of(2026, 11, 2, 9, 0); // 09:00 AM
+        BigDecimal surge = fareCalculationService.calculateSurgeMultiplier(morningPeak, 5, 5);
+        assertEquals(new BigDecimal("1.25"), surge);
+
+        LocalDateTime eveningPeak = LocalDateTime.of(2026, 11, 2, 18, 30); // 18:30 PM
+        BigDecimal eveningSurge = fareCalculationService.calculateSurgeMultiplier(eveningPeak, 5, 5);
+        assertEquals(new BigDecimal("1.30"), eveningSurge);
+
+        LocalDateTime normalHour = LocalDateTime.of(2026, 11, 2, 14, 0); // 14:00 PM
+        BigDecimal normalSurge = fareCalculationService.calculateSurgeMultiplier(normalHour, 2, 5);
+        assertEquals(new BigDecimal("1.00"), normalSurge);
+    }
+
+    @Test
     void testCouponDiscountAppliedCorrectly() {
         when(fareConfigRepository.findByCategory(VehicleCategory.BIKE)).thenReturn(Optional.of(bikeConfig));
 
