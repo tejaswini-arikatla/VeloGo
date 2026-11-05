@@ -136,11 +136,13 @@ public class AdminController {
     }
 
     @GetMapping("/audit-logs")
-    @Operation(summary = "View security and administrative audit trail")
-    public ResponseEntity<Page<AdminAuditLog>> getAuditLogs(
+    @Operation(summary = "View security and administrative audit trail with optional filtering")
+    public ResponseEntity<Page<AdminDtos.AdminAuditLogDto>> getAuditLogs(
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String targetEntity,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size
     ) {
-        return ResponseEntity.ok(adminService.getAuditLogs(PageRequest.of(page, size)));
+        return ResponseEntity.ok(adminService.getAuditLogs(action, targetEntity, PageRequest.of(page, size)));
     }
 }
