@@ -31,6 +31,21 @@ public class CaptainController {
         return ResponseEntity.ok(captainService.getProfile(userDetails.getId()));
     }
 
+    @GetMapping("/documents")
+    @Operation(summary = "Get list of uploaded verification documents for authenticated captain")
+    public ResponseEntity<List<CaptainDtos.DocumentDto>> getDocuments(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(captainService.getCaptainDocuments(userDetails.getId()));
+    }
+
+    @PostMapping("/documents")
+    @Operation(summary = "Upload a verification document (license, RC, insurance)")
+    public ResponseEntity<CaptainDtos.DocumentDto> uploadDocument(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody CaptainDtos.UploadDocumentRequest req
+    ) {
+        return ResponseEntity.ok(captainService.uploadDocument(userDetails.getId(), req));
+    }
+
     @PatchMapping("/availability")
     @Operation(summary = "Toggle online / offline availability")
     public ResponseEntity<AuthDtos.CaptainSummaryDto> toggleAvailability(

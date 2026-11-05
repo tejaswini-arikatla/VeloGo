@@ -26,6 +26,21 @@ public class CaptainDtos {
             Boolean demoDeclarationAcknowledged
     ) {}
 
+    public record UploadDocumentRequest(
+            @jakarta.validation.constraints.NotBlank(message = "Document type is required")
+            String documentType,
+            @jakarta.validation.constraints.NotBlank(message = "Document URL is required")
+            String documentUrl
+    ) {}
+
+    public record DocumentDto(
+            String id,
+            String documentType,
+            String documentUrl,
+            boolean verified,
+            String uploadedAt
+    ) {}
+
     public record IncomingRideDispatchDto(
             String dispatchId,
             String rideId,
