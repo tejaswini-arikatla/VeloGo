@@ -207,6 +207,10 @@ public class AdminService {
 
     @Transactional
     public FareConfiguration updateFareConfig(User admin, VehicleCategory category, AdminDtos.UpdateFareConfigRequest req) {
+        if (req.minFare() != null && req.baseFare() != null && req.minFare().compareTo(req.baseFare()) < 0) {
+            throw new BadRequestException("Minimum fare (₹" + req.minFare() + ") cannot be less than base fare (₹" + req.baseFare() + ")");
+        }
+
         FareConfiguration config = fareConfigRepository.findByCategory(category)
                 .orElseGet(() -> FareConfiguration.builder().id(UUID.randomUUID().toString()).category(category).build());
 

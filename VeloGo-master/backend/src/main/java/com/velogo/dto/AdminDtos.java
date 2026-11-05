@@ -3,6 +3,8 @@ package com.velogo.dto;
 import com.velogo.domain.enums.RideStatus;
 import com.velogo.domain.enums.VehicleCategory;
 import com.velogo.domain.enums.VerificationStatus;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -46,12 +48,36 @@ public class AdminDtos {
     ) {}
 
     public record UpdateFareConfigRequest(
-            @NotNull BigDecimal baseFare,
-            @NotNull BigDecimal minFare,
-            @NotNull BigDecimal perKmRate,
-            @NotNull BigDecimal perMinRate,
-            @NotNull BigDecimal bookingFee,
-            @NotNull BigDecimal taxRatePercent,
+            @NotNull(message = "Base fare is required")
+            @DecimalMin(value = "0.00", message = "Base fare cannot be negative")
+            @DecimalMax(value = "5000.00", message = "Base fare cannot exceed ₹5000")
+            BigDecimal baseFare,
+
+            @NotNull(message = "Minimum fare is required")
+            @DecimalMin(value = "0.00", message = "Minimum fare cannot be negative")
+            @DecimalMax(value = "5000.00", message = "Minimum fare cannot exceed ₹5000")
+            BigDecimal minFare,
+
+            @NotNull(message = "Per-kilometer rate is required")
+            @DecimalMin(value = "1.00", message = "Per-kilometer rate must be at least ₹1.00")
+            @DecimalMax(value = "500.00", message = "Per-kilometer rate cannot exceed ₹500.00")
+            BigDecimal perKmRate,
+
+            @NotNull(message = "Per-minute rate is required")
+            @DecimalMin(value = "0.00", message = "Per-minute rate cannot be negative")
+            @DecimalMax(value = "100.00", message = "Per-minute rate cannot exceed ₹100.00")
+            BigDecimal perMinRate,
+
+            @NotNull(message = "Booking fee is required")
+            @DecimalMin(value = "0.00", message = "Booking fee cannot be negative")
+            @DecimalMax(value = "500.00", message = "Booking fee cannot exceed ₹500.00")
+            BigDecimal bookingFee,
+
+            @NotNull(message = "Tax rate percentage is required")
+            @DecimalMin(value = "0.00", message = "Tax rate cannot be negative")
+            @DecimalMax(value = "50.00", message = "Tax rate cannot exceed 50%")
+            BigDecimal taxRatePercent,
+
             Boolean active
     ) {}
 
