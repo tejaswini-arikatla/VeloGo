@@ -163,6 +163,12 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Captain profile not found with id: " + captainId));
 
         if ("APPROVED".equalsIgnoreCase(newStatus)) {
+            if (captain.getVerificationStatus() != com.velogo.domain.enums.VerificationStatus.APPROVED) {
+                throw new BadRequestException("Captain documents and identity must be APPROVED before granting Women-Only eligibility.");
+            }
+            if (captain.getRatingAvg() != null && captain.getRatingAvg().compareTo(new BigDecimal("4.50")) < 0) {
+                throw new BadRequestException("Captain rating average must be at least 4.50 to qualify for the Women-Only Bike program.");
+            }
             captain.setWomenOnlyEligible(true);
             captain.setWomenOnlyStatus("APPROVED");
             captain.setWomenOnlyRejectionReason(null);

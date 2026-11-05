@@ -331,7 +331,7 @@ public class RideService {
 
         // Women-Only authorization check
         if (ride.getVehicleCategory() == VehicleCategory.WOMEN_BIKE) {
-            if (!captain.isWomenOnlyEligible() || !"APPROVED".equals(captain.getWomenOnlyStatus())) {
+            if (!captain.isWomenOnlyEligible() || !"APPROVED".equals(captain.getWomenOnlyStatus()) || captain.getVerificationStatus() != com.velogo.domain.enums.VerificationStatus.APPROVED) {
                 throw new BadRequestException("This is a Women-Only Bike booking. Only admin-approved Women-Only captains can accept this ride.");
             }
         }

@@ -93,6 +93,10 @@ public class CaptainService {
             throw new BadRequestException("Only two-wheeler / bike captains can apply for the Women-Only Bike program.");
         }
 
+        if (captain.getVerificationStatus() == com.velogo.domain.enums.VerificationStatus.REJECTED) {
+            throw new BadRequestException("Cannot apply for Women-Only program: driver account verification was rejected.");
+        }
+
         captain.setWomenOnlyStatus("APPLIED");
         captain.setWomenOnlyEligible(false); // submission does not automatically grant eligibility
         captain.setWomenOnlyDeclarationDate(LocalDateTime.now());
