@@ -85,7 +85,7 @@ export const AccessibilityProfileModule: React.FC<Props> = ({ userId, onNotice }
 
   const toggleAssistance = (value: Assistance) => {
     setDraft((current) => {
-      const selected = current.assistance.includes(value)
+      const selected: Assistance[] = current.assistance.includes(value)
         ? current.assistance.filter((item) => item !== value)
         : value === 'NONE'
           ? ['NONE']
