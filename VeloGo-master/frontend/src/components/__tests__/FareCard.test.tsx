@@ -48,6 +48,7 @@ describe('FareCard Component', () => {
     expect(screen.getByText('Base Fare')).toBeInTheDocument();
     expect(screen.getByText('Platform & Safety Fee')).toBeInTheDocument();
     expect(screen.getByText('Promotional Discount')).toBeInTheDocument();
+    expect(screen.getByTestId('promotional-discount-row')).toHaveTextContent('-₹20.00');
   });
 
   it('renders WOMEN_BIKE category with Women-Only badge and special styling', () => {
