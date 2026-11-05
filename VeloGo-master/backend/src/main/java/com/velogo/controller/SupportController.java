@@ -39,6 +39,17 @@ public class SupportController {
         return ResponseEntity.ok(supportService.submitRating(user, req));
     }
 
+    @PostMapping("/sos")
+    @Operation(summary = "Trigger critical emergency SOS alert for active ride with coordinates snapshot")
+    public ResponseEntity<SupportDtos.SosAlertResponse> triggerSos(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody SupportDtos.TriggerSosRequest req
+    ) {
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return ResponseEntity.ok(supportService.triggerSosEmergency(user, req));
+    }
+
     @PostMapping("/tickets")
     @Operation(summary = "Create customer/captain support ticket")
     public ResponseEntity<SupportDtos.TicketDto> createTicket(
