@@ -47,6 +47,7 @@ public class RideService {
     private final SubscriptionService subscriptionService;
     private final CorporateService corporateService;
     private final CompanyRepository companyRepository;
+    private final RatingRepository ratingRepository;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -527,6 +528,60 @@ public class RideService {
         RideDtos.RideDto dto = toRideDto(updated);
         eventPublisher.publishRideUpdate(rideId, dto);
         return dto;
+    }
+
+    @Transactional
+    public RideDtos.RatingDto rateRide(String userId, String rideId, RideDtos.RateRideRequest req) {
+        Ride ride = rideRepository.findById(rideId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
+
+        if (!ride.getCustomer().getId().equals(userId)) {
+            throw new ForbiddenException("Only the passenger can submit a rating for this ride.");
+        }
+
+        if (ride.getStatus() != RideStatus.COMPLETED) {
+            throw new BadRequestException("Ratings can only be submitted for completed rides.");
+        }
+
+        if (ride.getCaptain() == null) {
+            throw new BadRequestException("No captain is associated with this ride.");
+        }
+
+        if (ratingRepository.findByRideIdAndFromUserId(rideId, userId).isPresent()) {
+            throw new BadRequestException("You have already submitted a rating for this trip.");
+        }
+
+        Rating rating = Rating.builder()
+                .id(UUID.randomUUID().toString())
+                .ride(ride)
+                .fromUser(ride.getCustomer())
+                .toUser(ride.getCaptain().getUser())
+                .score(req.score())
+                .feedback(req.feedback() != null ? req.feedback().trim() : null)
+                .build();
+        Rating saved = ratingRepository.save(rating);
+
+        List<Rating> captainRatings = ratingRepository.findByToUserIdOrderByCreatedAtDesc(ride.getCaptain().getUser().getId());
+        double avg = captainRatings.stream().mapToInt(Rating::getScore).average().orElse(5.0);
+        CaptainProfile captain = ride.getCaptain();
+        captain.setRatingAvg(BigDecimal.valueOf(avg).setScale(2, java.math.RoundingMode.HALF_UP));
+        captainRepository.save(captain);
+
+        notificationService.sendNotification(
+                captain.getUser().getId(),
+                "New Ride Rating",
+                "You received a " + req.score() + "-star rating for your recent ride.",
+                NotificationType.RIDE_UPDATE
+        );
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return new RideDtos.RatingDto(
+                saved.getId(),
+                rideId,
+                saved.getScore(),
+                saved.getFeedback(),
+                saved.getCreatedAt() != null ? saved.getCreatedAt().format(dtf) : LocalDateTime.now().format(dtf)
+        );
     }
 
     @Transactional(readOnly = true)
