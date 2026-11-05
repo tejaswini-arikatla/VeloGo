@@ -32,16 +32,71 @@ public class FareCalculationService {
             BigDecimal discountAmount,
             BigDecimal taxAmount,
             BigDecimal totalFare,
-            String couponCode
-    ) {}
+            String couponCode,
+            BigDecimal surgeMultiplier
+    ) {
+        public FareBreakdown(
+                BigDecimal baseFare,
+                BigDecimal distanceCharge,
+                BigDecimal timeCharge,
+                BigDecimal bookingFee,
+                BigDecimal subtotal,
+                BigDecimal discountAmount,
+                BigDecimal taxAmount,
+                BigDecimal totalFare,
+                String couponCode
+        ) {
+            this(baseFare, distanceCharge, timeCharge, bookingFee, subtotal, discountAmount, taxAmount, totalFare, couponCode, BigDecimal.ONE);
+        }
+    }
+
+    public BigDecimal calculateSurgeMultiplier(LocalDateTime requestTime, int nearbyDemandCount, int availableCaptainsCount) {
+        BigDecimal multiplier = BigDecimal.ONE;
+        if (requestTime == null) {
+            requestTime = LocalDateTime.now();
+        }
+        int timeInMinutes = requestTime.getHour() * 60 + requestTime.getMinute();
+
+        // Morning rush hour: 08:00 - 10:30 (480 - 630 mins) -> 1.25x
+        if (timeInMinutes >= 480 && timeInMinutes <= 630) {
+            multiplier = new BigDecimal("1.25");
+        }
+        // Evening rush hour: 17:30 - 20:30 (1050 - 1230 mins) -> 1.30x
+        else if (timeInMinutes >= 1050 && timeInMinutes <= 1230) {
+            multiplier = new BigDecimal("1.30");
+        }
+        // Late night: 23:30 - 04:30 -> 1.15x
+        else if (timeInMinutes >= 1410 || timeInMinutes <= 270) {
+            multiplier = new BigDecimal("1.15");
+        }
+
+        // Supply-demand ratio surge
+        if (availableCaptainsCount > 0 && nearbyDemandCount > availableCaptainsCount) {
+            double ratio = (double) nearbyDemandCount / availableCaptainsCount;
+            if (ratio >= 2.0) {
+                multiplier = multiplier.max(new BigDecimal("1.50"));
+            } else if (ratio >= 1.5) {
+                multiplier = multiplier.max(new BigDecimal("1.35"));
+            }
+        } else if (availableCaptainsCount == 0 && nearbyDemandCount > 0) {
+            multiplier = multiplier.max(new BigDecimal("1.50"));
+        }
+
+        return multiplier.setScale(2, RoundingMode.HALF_UP);
+    }
 
     public FareBreakdown calculateFare(VehicleCategory category, BigDecimal distanceKm, Integer durationMinutes, String couponCode) {
+        return calculateFare(category, distanceKm, durationMinutes, couponCode, BigDecimal.ONE);
+    }
+
+    public FareBreakdown calculateFare(VehicleCategory category, BigDecimal distanceKm, Integer durationMinutes, String couponCode, BigDecimal surgeMultiplier) {
         FareConfiguration config = fareConfigRepository.findByCategory(category)
                 .orElseGet(() -> getDefaultConfig(category));
 
+        BigDecimal effectiveSurge = surgeMultiplier != null && surgeMultiplier.compareTo(BigDecimal.ONE) >= 0 ? surgeMultiplier : BigDecimal.ONE;
         BigDecimal baseFare = config.getBaseFare();
-        BigDecimal distanceCharge = distanceKm.multiply(config.getPerKmRate()).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal timeCharge = BigDecimal.valueOf(durationMinutes).multiply(config.getPerMinRate()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal distanceCharge = distanceKm.multiply(config.getPerKmRate()).multiply(effectiveSurge).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal timeCharge = BigDecimal.valueOf(durationMinutes).multiply(config.getPerMinRate()).multiply(effectiveSurge).setScale(2, RoundingMode.HALF_UP);
         BigDecimal bookingFee = config.getBookingFee();
 
         BigDecimal rawSubtotal = baseFare.add(distanceCharge).add(timeCharge).add(bookingFee);
@@ -79,7 +134,8 @@ public class FareCalculationService {
                 discountAmount,
                 taxAmount,
                 totalFare,
-                appliedCoupon
+                appliedCoupon,
+                effectiveSurge
         );
     }
 
