@@ -81,6 +81,10 @@ public class Ride {
     @Column(name = "otp_code", nullable = false, length = 6)
     private String otpCode;
 
+    @Column(name = "otp_attempts", nullable = false)
+    @Builder.Default
+    private int otpAttempts = 0;
+
     @Column(name = "is_for_someone_else", nullable = false)
     @Builder.Default
     private boolean isForSomeoneElse = false;
