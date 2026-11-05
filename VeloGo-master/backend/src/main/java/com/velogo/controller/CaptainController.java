@@ -31,6 +31,12 @@ public class CaptainController {
         return ResponseEntity.ok(captainService.getProfile(userDetails.getId()));
     }
 
+    @GetMapping("/earnings")
+    @Operation(summary = "Get detailed captain earnings breakdown including daily, weekly, and net payout metrics")
+    public ResponseEntity<CaptainDtos.EarningsSummaryDto> getEarnings(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(captainService.getEarningsSummary(userDetails.getId()));
+    }
+
     @PatchMapping("/availability")
     @Operation(summary = "Toggle online / offline availability")
     public ResponseEntity<AuthDtos.CaptainSummaryDto> toggleAvailability(

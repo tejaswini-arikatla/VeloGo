@@ -26,6 +26,17 @@ public class CaptainDtos {
             Boolean demoDeclarationAcknowledged
     ) {}
 
+    public record EarningsSummaryDto(
+            BigDecimal totalLifetimeEarnings,
+            BigDecimal todayEarnings,
+            int todayRidesCount,
+            BigDecimal weekEarnings,
+            int weekRidesCount,
+            BigDecimal platformFeeRate,
+            BigDecimal netPayoutPending,
+            int totalCompletedRides
+    ) {}
+
     public record IncomingRideDispatchDto(
             String dispatchId,
             String rideId,
