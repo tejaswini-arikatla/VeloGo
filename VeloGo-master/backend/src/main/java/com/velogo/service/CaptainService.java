@@ -32,6 +32,7 @@ public class CaptainService {
     private final RideRepository rideRepository;
     private final RideEventPublisher eventPublisher;
     private final NotificationService notificationService;
+    private final java.util.concurrent.ConcurrentHashMap<String, Long> lastDbPersistTime = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Transactional
     public void updateLocation(String captainUserId, CaptainDtos.UpdateLocationRequest req) {
@@ -43,10 +44,17 @@ public class CaptainService {
         CaptainProfile captain = captainRepository.findByUserId(captainUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Captain profile not found"));
 
-        captain.setCurrentLatitude(req.latitude());
-        captain.setCurrentLongitude(req.longitude());
-        captain.setLastLocationUpdate(LocalDateTime.now());
-        captainRepository.save(captain);
+        long nowMs = System.currentTimeMillis();
+        Long lastSaved = lastDbPersistTime.get(captainUserId);
+        boolean shouldPersistDb = lastSaved == null || (nowMs - lastSaved) >= 3000L;
+
+        if (shouldPersistDb) {
+            captain.setCurrentLatitude(req.latitude());
+            captain.setCurrentLongitude(req.longitude());
+            captain.setLastLocationUpdate(LocalDateTime.now());
+            captainRepository.save(captain);
+            lastDbPersistTime.put(captainUserId, nowMs);
+        }
 
         // If captain has active ride, broadcast location to customer
         List<Ride> activeRides = rideRepository.findActiveRidesForCaptain(captain.getId());
