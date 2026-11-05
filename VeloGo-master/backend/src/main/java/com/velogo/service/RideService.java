@@ -5,6 +5,7 @@ import com.velogo.domain.enums.NotificationType;
 import com.velogo.domain.enums.PaymentMethod;
 import com.velogo.domain.enums.PaymentStatus;
 import com.velogo.domain.enums.RideStatus;
+import com.velogo.domain.enums.Role;
 import com.velogo.domain.enums.VehicleCategory;
 import com.velogo.domain.enums.VerificationStatus;
 import com.velogo.dto.CorporateDtos;
@@ -47,6 +48,7 @@ public class RideService {
     private final SubscriptionService subscriptionService;
     private final CorporateService corporateService;
     private final CompanyRepository companyRepository;
+    private final UserRepository userRepository;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -527,6 +529,34 @@ public class RideService {
         RideDtos.RideDto dto = toRideDto(updated);
         eventPublisher.publishRideUpdate(rideId, dto);
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public List<RideDtos.RideStatusHistoryDto> getRideTimeline(String userId, String rideId) {
+        Ride ride = rideRepository.findById(rideId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
+
+        boolean isCustomer = ride.getCustomer().getId().equals(userId);
+        boolean isCaptain = ride.getCaptain() != null && ride.getCaptain().getUser().getId().equals(userId);
+
+        if (!isCustomer && !isCaptain) {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null || user.getRole() != Role.ROLE_ADMIN) {
+                throw new ForbiddenException("You are not authorized to view the timeline of this ride.");
+            }
+        }
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return historyRepository.findByRideIdOrderByCreatedAtAsc(rideId).stream()
+                .map(h -> new RideDtos.RideStatusHistoryDto(
+                        h.getId(),
+                        rideId,
+                        h.getFromStatus(),
+                        h.getToStatus(),
+                        h.getNotes(),
+                        h.getCreatedAt() != null ? h.getCreatedAt().format(dtf) : null
+                ))
+                .toList();
     }
 
     @Transactional(readOnly = true)

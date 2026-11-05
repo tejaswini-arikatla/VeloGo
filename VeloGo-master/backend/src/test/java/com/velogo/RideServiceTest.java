@@ -39,6 +39,7 @@ class RideServiceTest {
     @Mock private MatchingService matchingService;
     @Mock private NotificationService notificationService;
     @Mock private RideEventPublisher eventPublisher;
+    @Mock private UserRepository userRepository;
 
     @InjectMocks private RideService rideService;
 
