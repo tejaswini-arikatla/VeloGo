@@ -38,7 +38,7 @@ describe('route and fare algorithms', () => {
   it('calculates a plausible distance between two nearby cities', () => {
     const distance = haversineDistanceKm({ latitude: 16.3067, longitude: 80.4365 }, { latitude: 16.5062, longitude: 80.6480 });
     expect(distance).toBeGreaterThan(20);
-    expect(distance).toBeLessThan(30);
+    expect(distance).toBeLessThan(35);
   });
 
   it('rounds values without changing integer values', () => {

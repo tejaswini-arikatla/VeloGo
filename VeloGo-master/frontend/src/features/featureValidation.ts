@@ -109,8 +109,12 @@ export function validateTrustedContact(input: Partial<TrustedContact>, existing:
     ...validatePhone(input.phone || ''),
   ];
   if (!input.relationship) issues.push(issue('relationship', 'Choose a relationship.'));
-  const normalized = (input.phone || '').replace(/\D/g, '');
-  const duplicate = existing.some((contact) => contact.id !== input.id && contact.phone.replace(/\D/g, '') === normalized);
+  const normalizeDigits = (val: string) => {
+    const digits = val.replace(/\D/g, '');
+    return digits.length > 10 ? digits.slice(-10) : digits;
+  };
+  const normalized = normalizeDigits(input.phone || '');
+  const duplicate = existing.some((contact) => contact.id !== input.id && normalizeDigits(contact.phone) === normalized);
   if (duplicate) issues.push(issue('phone', 'This phone number is already in your trusted contacts.'));
   return { valid: issues.length === 0, issues };
 }

@@ -56,11 +56,13 @@ export function isWithinQuietHours(
   date: Date,
   start: string,
   end: string,
+  options?: { useUtc?: boolean },
 ): boolean {
   const startMinutes = parseClock(start);
   const endMinutes = parseClock(end);
   if (startMinutes == null || endMinutes == null || startMinutes === endMinutes) return false;
-  const current = date.getHours() * 60 + date.getMinutes();
+  const current = (options?.useUtc ? date.getUTCHours() : date.getHours()) * 60 +
+                  (options?.useUtc ? date.getUTCMinutes() : date.getMinutes());
   if (startMinutes < endMinutes) return current >= startMinutes && current < endMinutes;
   return current >= startMinutes || current < endMinutes;
 }
@@ -68,8 +70,8 @@ export function isWithinQuietHours(
 export function normalizeReminderPreference(
   input: Partial<ReminderPreference>,
 ): ReminderPreference {
-  const channels = (input.channels || DEFAULT_REMINDER_PREFERENCE.channels)
-    .filter((channel): channel is ReminderChannel => ['IN_APP', 'BROWSER', 'EMAIL', 'SMS'].includes(channel));
+  const channels = [...new Set((input.channels || DEFAULT_REMINDER_PREFERENCE.channels)
+    .filter((channel): channel is ReminderChannel => ['IN_APP', 'BROWSER', 'EMAIL', 'SMS'].includes(channel)))];
   const leadMinutes = [...new Set((input.leadMinutes || DEFAULT_REMINDER_PREFERENCE.leadMinutes)
     .filter((value) => Number.isInteger(value) && value >= 0 && value <= 10080))]
     .sort((a, b) => a - b);
@@ -109,7 +111,13 @@ export function evaluateReminder(
   if (candidate.completed || candidate.dismissed || !preference.enabled) return [];
   const sent = new Set(options.sentKeys || []);
   const todayCount = options.sentToday || 0;
-  const quiet = preference.quietHoursEnabled && isWithinQuietHours(now, preference.quietHoursStart, preference.quietHoursEnd);
+  const candidateIsUtc = typeof candidate.dueAt === 'string' && candidate.dueAt.endsWith('Z');
+  const quiet = preference.quietHoursEnabled && isWithinQuietHours(
+    now,
+    preference.quietHoursStart,
+    preference.quietHoursEnd,
+    candidateIsUtc ? { useUtc: true } : undefined
+  );
   return preference.leadMinutes.map((leadMinutes) => {
     const fireAt = new Date(due.getTime() - leadMinutes * 60_000);
     const key = `${candidate.id}:${leadMinutes}`;
