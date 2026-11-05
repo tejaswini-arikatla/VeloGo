@@ -366,4 +366,39 @@ class WomenOnlyBikeServiceTest {
         assertEquals("Demo vehicle did not qualify", rejected.getWomenOnlyRejectionReason());
         verify(auditLogRepository, times(1)).save(any(AdminAuditLog.class));
     }
+
+    @Test
+    void testAdminApprovesWomenOnlyCaptain_FailsIfGeneralVerificationNotApproved() {
+        standardCaptain.setVerificationStatus(VerificationStatus.PENDING);
+        when(captainRepository.findById("cp-std-1")).thenReturn(Optional.of(standardCaptain));
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () ->
+                adminService.verifyWomenOnlyCaptain(adminUser, "cp-std-1", "APPROVED", null)
+        );
+        assertTrue(ex.getMessage().contains("must be APPROVED before granting Women-Only eligibility"));
+    }
+
+    @Test
+    void testAdminApprovesWomenOnlyCaptain_FailsIfRatingBelowThreshold() {
+        standardCaptain.setVerificationStatus(VerificationStatus.APPROVED);
+        standardCaptain.setRatingAvg(new BigDecimal("4.20"));
+        when(captainRepository.findById("cp-std-1")).thenReturn(Optional.of(standardCaptain));
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () ->
+                adminService.verifyWomenOnlyCaptain(adminUser, "cp-std-1", "APPROVED", null)
+        );
+        assertTrue(ex.getMessage().contains("rating average must be at least 4.50"));
+    }
+
+    @Test
+    void testCaptainAppliesForWomenOnly_BlockedIfRejectedVerification() {
+        standardCaptain.setVerificationStatus(VerificationStatus.REJECTED);
+        when(captainRepository.findByUserId("capt-u-1")).thenReturn(Optional.of(standardCaptain));
+
+        CaptainDtos.ApplyWomenOnlyRequest req = new CaptainDtos.ApplyWomenOnlyRequest(true);
+        BadRequestException ex = assertThrows(BadRequestException.class, () ->
+                captainService.applyForWomenOnly("capt-u-1", req)
+        );
+        assertTrue(ex.getMessage().contains("driver account verification was rejected"));
+    }
 }
