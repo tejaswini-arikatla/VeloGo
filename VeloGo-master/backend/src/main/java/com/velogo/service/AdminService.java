@@ -121,8 +121,27 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public Page<AdminAuditLog> getAuditLogs(Pageable pageable) {
-        return auditLogRepository.findAllByOrderByCreatedAtDesc(pageable);
+    public Page<AdminDtos.AdminAuditLogDto> getAuditLogs(String action, String targetEntity, Pageable pageable) {
+        Page<AdminAuditLog> logs;
+        if (action != null && !action.isBlank()) {
+            logs = auditLogRepository.findByActionOrderByCreatedAtDesc(action.trim().toUpperCase(), pageable);
+        } else if (targetEntity != null && !targetEntity.isBlank()) {
+            logs = auditLogRepository.findByTargetEntityOrderByCreatedAtDesc(targetEntity.trim(), pageable);
+        } else {
+            logs = auditLogRepository.findAllByOrderByCreatedAtDesc(pageable);
+        }
+
+        return logs.map(l -> new AdminDtos.AdminAuditLogDto(
+                l.getId(),
+                l.getAdmin() != null ? l.getAdmin().getId() : null,
+                l.getAdmin() != null ? l.getAdmin().getFullName() : "System",
+                l.getAdmin() != null ? l.getAdmin().getEmail() : null,
+                l.getAction(),
+                l.getTargetEntity(),
+                l.getTargetId(),
+                l.getDetails(),
+                l.getCreatedAt() != null ? l.getCreatedAt().toString() : null
+        ));
     }
 
     @Transactional

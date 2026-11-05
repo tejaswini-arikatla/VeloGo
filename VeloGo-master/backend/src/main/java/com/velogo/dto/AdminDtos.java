@@ -102,4 +102,16 @@ public class AdminDtos {
             BigDecimal totalEarnings,
             String createdAt
     ) {}
+
+    public record AdminAuditLogDto(
+            String id,
+            String adminId,
+            String adminName,
+            String adminEmail,
+            String action,
+            String targetEntity,
+            String targetId,
+            String details,
+            String createdAt
+    ) {}
 }

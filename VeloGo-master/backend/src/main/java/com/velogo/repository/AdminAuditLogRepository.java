@@ -9,4 +9,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, String> {
     Page<AdminAuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    Page<AdminAuditLog> findByActionOrderByCreatedAtDesc(String action, Pageable pageable);
+
+    Page<AdminAuditLog> findByTargetEntityOrderByCreatedAtDesc(String targetEntity, Pageable pageable);
 }
