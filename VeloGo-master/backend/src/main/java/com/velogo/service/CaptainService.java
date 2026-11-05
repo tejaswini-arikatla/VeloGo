@@ -115,6 +115,58 @@ public class CaptainService {
         return toCaptainSummaryDto(captain);
     }
 
+    @Transactional(readOnly = true)
+    public CaptainDtos.EarningsSummaryDto getEarningsSummary(String captainUserId) {
+        CaptainProfile captain = captainRepository.findByUserId(captainUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Captain profile not found"));
+
+        LocalDateTime startOfToday = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime startOfWeek = startOfToday.minusDays(LocalDateTime.now().getDayOfWeek().getValue() - 1);
+
+        List<Ride> captainRides = rideRepository.findByCaptainIdOrderByCreatedAtDesc(captain.getId());
+        List<Ride> completedRides = captainRides.stream()
+                .filter(r -> r.getStatus() == com.velogo.domain.enums.RideStatus.COMPLETED)
+                .toList();
+
+        BigDecimal todayGross = BigDecimal.ZERO;
+        int todayCount = 0;
+        BigDecimal weekGross = BigDecimal.ZERO;
+        int weekCount = 0;
+
+        for (Ride r : completedRides) {
+            LocalDateTime compAt = r.getCompletedAt() != null ? r.getCompletedAt() : r.getCreatedAt();
+            BigDecimal fare = r.getFinalFare() != null ? r.getFinalFare() : (r.getEstimatedFare() != null ? r.getEstimatedFare() : BigDecimal.ZERO);
+            if (compAt.isAfter(startOfToday)) {
+                todayGross = todayGross.add(fare);
+                todayCount++;
+            }
+            if (compAt.isAfter(startOfWeek)) {
+                weekGross = weekGross.add(fare);
+                weekCount++;
+            }
+        }
+
+        BigDecimal feeRate = new BigDecimal("0.15");
+        BigDecimal netMultiplier = BigDecimal.ONE.subtract(feeRate);
+
+        BigDecimal todayNet = todayGross.multiply(netMultiplier).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal weekNet = weekGross.multiply(netMultiplier).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal pendingPayout = captain.getTotalEarnings() != null
+                ? captain.getTotalEarnings().multiply(netMultiplier).setScale(2, java.math.RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        return new CaptainDtos.EarningsSummaryDto(
+                captain.getTotalEarnings() != null ? captain.getTotalEarnings() : BigDecimal.ZERO,
+                todayNet,
+                todayCount,
+                weekNet,
+                weekCount,
+                new BigDecimal("15.0"),
+                pendingPayout,
+                captain.getTotalRides()
+        );
+    }
+
     public AuthDtos.CaptainSummaryDto toCaptainSummaryDto(CaptainProfile cp) {
         AuthDtos.VehicleDto vDto = null;
         if (cp.getVehicle() != null) {
