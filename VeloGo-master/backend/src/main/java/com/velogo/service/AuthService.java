@@ -67,6 +67,7 @@ public class AuthService {
 
     @Transactional
     public AuthDtos.AuthResponse registerCustomer(AuthDtos.RegisterCustomerRequest req) {
+        validatePasswordComplexity(req.password());
         if (userRepository.existsByEmail(req.email().trim().toLowerCase())) {
             throw new BadRequestException("An account with email " + req.email() + " already exists.");
         }
@@ -118,6 +119,7 @@ public class AuthService {
 
     @Transactional
     public AuthDtos.AuthResponse registerCaptain(AuthDtos.RegisterCaptainRequest req) {
+        validatePasswordComplexity(req.password());
         if (userRepository.existsByEmail(req.email().trim().toLowerCase())) {
             throw new BadRequestException("An account with email " + req.email() + " already exists.");
         }
@@ -222,6 +224,24 @@ public class AuthService {
                 .revoked(false)
                 .build();
         refreshTokenRepository.save(rt);
+    }
+
+    private void validatePasswordComplexity(String password) {
+        if (password == null || password.length() < 8) {
+            throw new BadRequestException("Password must be at least 8 characters long.");
+        }
+        if (password.length() > 128) {
+            throw new BadRequestException("Password cannot exceed 128 characters.");
+        }
+        boolean hasDigit = false;
+        boolean hasLetter = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) hasDigit = true;
+            if (Character.isLetter(c)) hasLetter = true;
+        }
+        if (!hasDigit || !hasLetter) {
+            throw new BadRequestException("Password must contain at least one letter and one number.");
+        }
     }
 
     public AuthDtos.UserDto buildUserDto(User user) {
