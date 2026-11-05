@@ -1,6 +1,8 @@
 package com.velogo.service;
 
+import com.velogo.domain.CaptainDocument;
 import com.velogo.domain.CaptainProfile;
+import com.velogo.repository.CaptainDocumentRepository;
 import com.velogo.domain.Ride;
 import com.velogo.domain.enums.NotificationType;
 import com.velogo.domain.enums.VehicleCategory;
@@ -32,6 +34,8 @@ public class CaptainService {
     private final RideRepository rideRepository;
     private final RideEventPublisher eventPublisher;
     private final NotificationService notificationService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private CaptainDocumentRepository documentRepository;
 
     @Transactional
     public void updateLocation(String captainUserId, CaptainDtos.UpdateLocationRequest req) {
@@ -113,6 +117,44 @@ public class CaptainService {
         CaptainProfile captain = captainRepository.findByUserId(captainUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Captain profile not found"));
         return toCaptainSummaryDto(captain);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CaptainDtos.DocumentDto> getCaptainDocuments(String captainUserId) {
+        CaptainProfile captain = captainRepository.findByUserId(captainUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Captain profile not found"));
+        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return documentRepository.findByCaptainId(captain.getId()).stream()
+                .map(d -> new CaptainDtos.DocumentDto(
+                        d.getId(),
+                        d.getDocumentType(),
+                        d.getDocumentUrl(),
+                        d.isVerified(),
+                        d.getUploadedAt() != null ? d.getUploadedAt().format(dtf) : null
+                ))
+                .toList();
+    }
+
+    @Transactional
+    public CaptainDtos.DocumentDto uploadDocument(String captainUserId, CaptainDtos.UploadDocumentRequest req) {
+        CaptainProfile captain = captainRepository.findByUserId(captainUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Captain profile not found"));
+        CaptainDocument doc = CaptainDocument.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .captain(captain)
+                .documentType(req.documentType().trim().toUpperCase())
+                .documentUrl(req.documentUrl().trim())
+                .verified(false)
+                .build();
+        CaptainDocument saved = documentRepository.save(doc);
+        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return new CaptainDtos.DocumentDto(
+                saved.getId(),
+                saved.getDocumentType(),
+                saved.getDocumentUrl(),
+                saved.isVerified(),
+                saved.getUploadedAt() != null ? saved.getUploadedAt().format(dtf) : null
+        );
     }
 
     public AuthDtos.CaptainSummaryDto toCaptainSummaryDto(CaptainProfile cp) {
