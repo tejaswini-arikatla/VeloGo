@@ -24,6 +24,15 @@ public class RideController {
 
     private final RideService rideService;
     private final UserRepository userRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.velogo.repository.CouponRepository couponRepository;
+
+    @GetMapping("/coupons")
+    @Operation(summary = "List currently active coupons available for customers")
+    public ResponseEntity<List<com.velogo.domain.Coupon>> getAvailableCoupons() {
+        if (couponRepository == null) return ResponseEntity.ok(List.of());
+        return ResponseEntity.ok(couponRepository.findAll().stream().filter(com.velogo.domain.Coupon::isActive).toList());
+    }
 
     @PostMapping("/estimate")
     @Operation(summary = "Estimate fares for all vehicle categories between pickup and destination")

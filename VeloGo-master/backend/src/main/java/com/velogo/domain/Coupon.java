@@ -41,6 +41,13 @@ public class Coupon {
     @Column(name = "expiry_date")
     private LocalDateTime expiryDate;
 
+    @Column(name = "usage_limit")
+    private Integer usageLimit;
+
+    @Column(name = "times_used", nullable = false)
+    @Builder.Default
+    private int timesUsed = 0;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
