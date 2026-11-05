@@ -6,6 +6,7 @@ import com.velogo.domain.enums.VerificationStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ public class AuthDtos {
 
     public record RegisterCustomerRequest(
             @NotBlank(message = "Full name is required")
+            @Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")
             String fullName,
 
             @NotBlank(message = "Email is required")
@@ -29,6 +31,7 @@ public class AuthDtos {
             String email,
 
             @NotBlank(message = "Phone number is required")
+            @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone number must be a valid 10-15 digit phone number (e.g. +919876543210)")
             String phone,
 
             @NotBlank(message = "Password is required")
@@ -42,6 +45,7 @@ public class AuthDtos {
 
     public record RegisterCaptainRequest(
             @NotBlank(message = "Full name is required")
+            @Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")
             String fullName,
 
             @NotBlank(message = "Email is required")
@@ -49,6 +53,7 @@ public class AuthDtos {
             String email,
 
             @NotBlank(message = "Phone number is required")
+            @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone number must be a valid 10-15 digit phone number (e.g. +919876543210)")
             String phone,
 
             @NotBlank(message = "Password is required")
@@ -56,18 +61,22 @@ public class AuthDtos {
             String password,
 
             @NotBlank(message = "Driving license number is required")
+            @Size(min = 5, max = 30, message = "Driving license number must be between 5 and 30 characters")
             String drivingLicenseNumber,
 
             @NotNull(message = "Vehicle category is required")
             VehicleCategory vehicleCategory,
 
             @NotBlank(message = "Vehicle model is required")
+            @Size(min = 2, max = 50, message = "Vehicle model must be between 2 and 50 characters")
             String vehicleModel,
 
             @NotBlank(message = "Registration number is required")
+            @Size(min = 4, max = 20, message = "Registration number must be between 4 and 20 characters")
             String registrationNumber,
 
             @NotBlank(message = "Vehicle color is required")
+            @Size(min = 2, max = 30, message = "Vehicle color must be between 2 and 30 characters")
             String vehicleColor
     ) {}
 
