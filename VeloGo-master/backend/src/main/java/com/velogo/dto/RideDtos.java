@@ -159,6 +159,7 @@ public class RideDtos {
             com.velogo.domain.enums.CorporateApprovalStatus corporateApprovalStatus,
             Boolean requiresApproval,
             BigDecimal subscriptionDiscount,
-            Boolean isSubscriptionFreeRide
+            Boolean isSubscriptionFreeRide,
+            BigDecimal cancellationFee
     ) {}
 }

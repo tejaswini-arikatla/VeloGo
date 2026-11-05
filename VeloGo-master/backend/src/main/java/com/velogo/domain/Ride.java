@@ -137,6 +137,10 @@ public class Ride {
     @Column(name = "cancelled_by", length = 20)
     private String cancelledBy;
 
+    @Column(name = "cancellation_fee", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal cancellationFee = BigDecimal.ZERO;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
