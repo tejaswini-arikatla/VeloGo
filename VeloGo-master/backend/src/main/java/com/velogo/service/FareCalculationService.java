@@ -55,7 +55,8 @@ public class FareCalculationService {
             if (optCoupon.isPresent()) {
                 Coupon coupon = optCoupon.get();
                 boolean notExpired = coupon.getExpiryDate() == null || coupon.getExpiryDate().isAfter(LocalDateTime.now());
-                if (notExpired && subtotal.compareTo(coupon.getMinRideAmount()) >= 0) {
+                boolean withinLimit = coupon.getUsageLimit() == null || coupon.getTimesUsed() < coupon.getUsageLimit();
+                if (notExpired && withinLimit && subtotal.compareTo(coupon.getMinRideAmount()) >= 0) {
                     BigDecimal calculatedDiscount = subtotal.multiply(coupon.getDiscountPercent())
                             .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                     discountAmount = calculatedDiscount.min(coupon.getMaxDiscount()).setScale(2, RoundingMode.HALF_UP);
@@ -93,6 +94,9 @@ public class FareCalculationService {
         }
         Coupon coupon = optCoupon.get();
         if (coupon.getExpiryDate() != null && coupon.getExpiryDate().isBefore(LocalDateTime.now())) {
+            return null;
+        }
+        if (coupon.getUsageLimit() != null && coupon.getTimesUsed() >= coupon.getUsageLimit()) {
             return null;
         }
         if (rideAmount.compareTo(coupon.getMinRideAmount()) < 0) {
