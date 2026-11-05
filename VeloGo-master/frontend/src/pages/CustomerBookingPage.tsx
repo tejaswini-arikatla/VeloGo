@@ -103,19 +103,23 @@ export const CustomerBookingPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      api.corporate.getMyProfile().then(setCorporateMember).catch(() => {});
-      api.subscriptions.getPortal().then((p) => {
-        if (p?.activeSubscription && p.activeSubscription.isActive) {
-          setActiveSubscription(p.activeSubscription);
-        }
-      }).catch(() => {});
+      if (api.corporate?.getMyProfile) {
+        api.corporate.getMyProfile().then(setCorporateMember).catch(() => {});
+      }
+      if (api.subscriptions?.getPortal) {
+        api.subscriptions.getPortal().then((p) => {
+          if (p?.activeSubscription && p.activeSubscription.isActive) {
+            setActiveSubscription(p.activeSubscription);
+          }
+        }).catch(() => {});
+      }
     }
   }, [user]);
 
   useEffect(() => {
     if (user && billingProfile === 'CORPORATE') {
       const est = estimates?.estimates?.find((e) => e.category === selectedCategory);
-      if (est) {
+      if (est && api.corporate?.checkEligibility) {
         api.corporate.checkEligibility(est.totalFare).then(setCorporateEligibility).catch(() => {});
       }
     }
