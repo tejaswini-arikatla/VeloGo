@@ -55,6 +55,15 @@ public class RideController {
         return ResponseEntity.ok(rideService.getRideDetails(rideId, userDetails.getId()));
     }
 
+    @PostMapping("/{rideId}/regenerate-otp")
+    @Operation(summary = "Regenerate 4-digit ride pickup verification OTP for customer")
+    public ResponseEntity<RideDtos.RideDto> regenerateOtp(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String rideId
+    ) {
+        return ResponseEntity.ok(rideService.regenerateOtp(userDetails.getId(), rideId));
+    }
+
     @PostMapping("/{rideId}/cancel")
     @Operation(summary = "Cancel an active ride with reason")
     public ResponseEntity<RideDtos.RideDto> cancelRide(

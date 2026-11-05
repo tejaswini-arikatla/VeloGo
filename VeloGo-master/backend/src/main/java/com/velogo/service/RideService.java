@@ -397,8 +397,15 @@ public class RideService {
             throw new BadRequestException("Trip can only be started once captain has arrived or accepted.");
         }
 
+        if (ride.getOtpAttempts() >= 5) {
+            throw new BadRequestException("Maximum OTP verification attempts exceeded. Please contact customer support.");
+        }
+
         if (otpCode == null || !otpCode.trim().equals(ride.getOtpCode())) {
-            throw new BadRequestException("Invalid OTP code. Please enter the 4-digit OTP provided by the customer.");
+            ride.setOtpAttempts(ride.getOtpAttempts() + 1);
+            rideRepository.save(ride);
+            int remaining = 5 - ride.getOtpAttempts();
+            throw new BadRequestException("Invalid OTP code. " + (remaining > 0 ? remaining + " attempts remaining." : "Maximum attempts reached."));
         }
 
         ride.setStatus(RideStatus.IN_PROGRESS);
@@ -524,6 +531,32 @@ public class RideService {
                 NotificationType.RIDE_UPDATE
         );
 
+        RideDtos.RideDto dto = toRideDto(updated);
+        eventPublisher.publishRideUpdate(rideId, dto);
+        return dto;
+    }
+
+    @Transactional
+    public RideDtos.RideDto regenerateOtp(String customerUserId, String rideId) {
+        Ride ride = rideRepository.findById(rideId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
+        if (!ride.getCustomer().getId().equals(customerUserId)) {
+            throw new ForbiddenException("Only the booking customer can request OTP regeneration.");
+        }
+        if (ride.getStatus() != RideStatus.SEARCHING && ride.getStatus() != RideStatus.ACCEPTED && ride.getStatus() != RideStatus.ARRIVED) {
+            throw new BadRequestException("Cannot regenerate OTP for ride with status: " + ride.getStatus());
+        }
+        String newOtp = String.format("%04d", secureRandom.nextInt(10000));
+        ride.setOtpCode(newOtp);
+        ride.setOtpAttempts(0);
+        Ride updated = rideRepository.save(ride);
+
+        notificationService.sendNotification(
+                customerUserId,
+                "New Ride OTP",
+                "Your ride start OTP is: " + newOtp,
+                NotificationType.RIDE_UPDATE
+        );
         RideDtos.RideDto dto = toRideDto(updated);
         eventPublisher.publishRideUpdate(rideId, dto);
         return dto;
