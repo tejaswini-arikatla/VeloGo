@@ -4,8 +4,11 @@ import com.velogo.domain.enums.PaymentMethod;
 import com.velogo.domain.enums.PaymentStatus;
 import com.velogo.domain.enums.RideStatus;
 import com.velogo.domain.enums.VehicleCategory;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -104,7 +107,9 @@ public class RideDtos {
     }
 
     public record CancelRideRequest(
-            @NotBlank String reason
+            @NotBlank(message = "Cancellation reason is required")
+            @Size(min = 3, max = 255, message = "Cancellation reason must be between 3 and 255 characters")
+            String reason
     ) {}
 
     public record RideDto(
