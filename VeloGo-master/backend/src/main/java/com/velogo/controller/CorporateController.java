@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,6 +68,7 @@ public class CorporateController {
     }
 
     @PatchMapping("/companies/{companyId}/verification")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @Operation(summary = "Super-admin approve or reject enterprise registration")
     public ResponseEntity<CorporateDtos.CompanyDto> verifyCompany(
             @PathVariable String companyId,
