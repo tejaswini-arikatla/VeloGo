@@ -154,4 +154,13 @@ public class CorporateDtos {
             @NotNull CompanyMemberRole role,
             @NotNull BigDecimal monthlyBudget
     ) {}
+
+    public record CorporateDomainCheckResult(
+            boolean domainRecognized,
+            String domain,
+            String companyId,
+            String companyName,
+            boolean autoJoinEligible,
+            String message
+    ) {}
 }

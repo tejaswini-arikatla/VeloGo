@@ -347,6 +347,75 @@ public class CorporateService {
         return mapToCompanyDto(updated, memberCount, pendingApprovals);
     }
 
+    public CorporateDtos.CorporateDomainCheckResult checkDomainEligibility(String emailOrDomain) {
+        if (emailOrDomain == null || emailOrDomain.isBlank()) {
+            return new CorporateDtos.CorporateDomainCheckResult(false, null, null, null, false, "Email or domain cannot be empty");
+        }
+
+        String raw = emailOrDomain.trim().toLowerCase();
+        String domain = raw.contains("@") ? raw.substring(raw.indexOf('@') + 1) : raw;
+
+        if (isPublicEmailDomain(domain)) {
+            return new CorporateDtos.CorporateDomainCheckResult(
+                    false,
+                    domain,
+                    null,
+                    null,
+                    false,
+                    "Public webmail provider (" + domain + ") is not eligible for corporate enterprise enrollment"
+            );
+        }
+
+        Optional<Company> directMatch = companyRepository.findByDomainIgnoreCaseAndStatus(domain, CompanyStatus.ACTIVE);
+        if (directMatch.isPresent()) {
+            Company c = directMatch.get();
+            return new CorporateDtos.CorporateDomainCheckResult(
+                    true,
+                    domain,
+                    c.getId(),
+                    c.getName(),
+                    true,
+                    "Domain is mapped to active corporate account " + c.getName()
+            );
+        }
+
+        // Check subdomain matching (e.g. eng.corp.com -> corp.com)
+        if (domain.contains(".")) {
+            String parentDomain = domain.substring(domain.indexOf('.') + 1);
+            if (parentDomain.contains(".")) {
+                Optional<Company> parentMatch = companyRepository.findByDomainIgnoreCaseAndStatus(parentDomain, CompanyStatus.ACTIVE);
+                if (parentMatch.isPresent()) {
+                    Company c = parentMatch.get();
+                    return new CorporateDtos.CorporateDomainCheckResult(
+                            true,
+                            domain,
+                            c.getId(),
+                            c.getName(),
+                            true,
+                            "Subdomain is mapped to parent enterprise account " + c.getName()
+                    );
+                }
+            }
+        }
+
+        return new CorporateDtos.CorporateDomainCheckResult(
+                false,
+                domain,
+                null,
+                null,
+                false,
+                "No active enterprise corporate account associated with domain @" + domain
+        );
+    }
+
+    private boolean isPublicEmailDomain(String domain) {
+        if (domain == null) return false;
+        String d = domain.trim().toLowerCase();
+        return d.equals("gmail.com") || d.equals("yahoo.com") || d.equals("hotmail.com")
+                || d.equals("outlook.com") || d.equals("velogo.com") || d.equals("icloud.com")
+                || d.equals("proton.me") || d.equals("mail.com") || d.equals("aol.com");
+    }
+
     @Transactional
     public void checkAndAutoJoinCompanyByEmail(User user) {
         if (user == null || user.getEmail() == null || !user.getEmail().contains("@")) {
@@ -359,11 +428,19 @@ public class CorporateService {
         }
 
         String domain = user.getEmail().substring(user.getEmail().indexOf('@') + 1).toLowerCase();
-        if (domain.equals("gmail.com") || domain.equals("yahoo.com") || domain.equals("hotmail.com") || domain.equals("outlook.com") || domain.equals("velogo.com")) {
+        if (isPublicEmailDomain(domain)) {
             return;
         }
 
-        companyRepository.findByDomainIgnoreCaseAndStatus(domain, CompanyStatus.ACTIVE).ifPresent(company -> {
+        Optional<Company> matchedCompany = companyRepository.findByDomainIgnoreCaseAndStatus(domain, CompanyStatus.ACTIVE);
+        if (matchedCompany.isEmpty() && domain.contains(".")) {
+            String parentDomain = domain.substring(domain.indexOf('.') + 1);
+            if (parentDomain.contains(".")) {
+                matchedCompany = companyRepository.findByDomainIgnoreCaseAndStatus(parentDomain, CompanyStatus.ACTIVE);
+            }
+        }
+
+        matchedCompany.ifPresent(company -> {
             CompanyMember member = CompanyMember.builder()
                     .id(UUID.randomUUID().toString())
                     .company(company)
