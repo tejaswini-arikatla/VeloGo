@@ -131,4 +131,35 @@ public class SubscriptionServiceTest {
         assertTrue(subDto.autoRenew());
         verify(notificationService).sendNotification(eq("u-sub-1"), contains("Activated"), anyString(), eq(NotificationType.PROMO));
     }
+
+    @Test
+    @DisplayName("Should suppress subscription discount when daily quota is exhausted")
+    void testEvaluateDiscount_DailyQuotaExhausted() {
+        when(userSubscriptionRepository.findActiveSubscriptionsByUserId("u-sub-1"))
+                .thenReturn(List.of(activeSubscription));
+        when(usageRepository.countByUserSubscriptionIdAndUsedAtBetween(eq("usub-1"), any(), any()))
+                .thenReturn(4L);
+
+        Optional<SubscriptionService.SubscriptionDiscountResult> result =
+                subscriptionService.evaluateSubscriptionDiscount("u-sub-1", new BigDecimal("100.00"));
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should calculate remaining daily quota correctly")
+    void testGetDailyQuotaStatus() {
+        when(userSubscriptionRepository.findActiveSubscriptionsByUserId("u-sub-1"))
+                .thenReturn(List.of(activeSubscription));
+        when(usageRepository.countByUserSubscriptionIdAndUsedAtBetween(eq("usub-1"), any(), any()))
+                .thenReturn(2L);
+
+        SubscriptionDtos.SubscriptionDailyQuotaDto quota = subscriptionService.getDailyQuotaStatus(user);
+
+        assertEquals("usub-1", quota.subscriptionId());
+        assertEquals(2, quota.dailyUsageCount());
+        assertEquals(4, quota.maxDailyLimit());
+        assertEquals(2, quota.remainingDailyTrips());
+        assertTrue(quota.quotaAvailable());
+    }
 }

@@ -31,6 +31,16 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.getActivePlans());
     }
 
+    @GetMapping("/daily-quota")
+    @Operation(summary = "Get user's daily subscription pass usage and quota status")
+    public ResponseEntity<SubscriptionDtos.SubscriptionDailyQuotaDto> getDailyQuota(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return ResponseEntity.ok(subscriptionService.getDailyQuotaStatus(user));
+    }
+
     @GetMapping("/portal")
     @Operation(summary = "Get user account subscription portal data including active plan, savings, and history")
     public ResponseEntity<SubscriptionDtos.UserSubscriptionPortalDto> getUserPortal(
