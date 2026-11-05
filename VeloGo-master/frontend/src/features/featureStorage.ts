@@ -84,9 +84,9 @@ export function readCollection<K extends keyof FeatureCollections>(
   userId: string,
   collection: K,
 ): FeatureCollections[K] {
-  if (!userId) return collection === 'rewards' ? emptyRewardProfile() as FeatureCollections[K] : [] as FeatureCollections[K];
+  if (!userId) return (collection === 'rewards' ? emptyRewardProfile() : []) as unknown as FeatureCollections[K];
   const fallback = collection === 'rewards' ? emptyRewardProfile() : [];
-  return safeParse<FeatureCollections[K]>(localStorage.getItem(storageKey(userId, collection)), fallback as FeatureCollections[K]);
+  return safeParse<FeatureCollections[K]>(localStorage.getItem(storageKey(userId, collection)), fallback as unknown as FeatureCollections[K]);
 }
 
 export function writeCollection<K extends keyof FeatureCollections>(
