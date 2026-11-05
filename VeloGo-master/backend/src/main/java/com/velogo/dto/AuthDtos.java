@@ -32,7 +32,7 @@ public class AuthDtos {
             String phone,
 
             @NotBlank(message = "Password is required")
-            @Size(min = 6, message = "Password must be at least 6 characters")
+            @Size(min = 8, max = 128, message = "Password must be between 8 and 128 characters")
             String password,
 
             String emergencyContactName,
@@ -52,7 +52,7 @@ public class AuthDtos {
             String phone,
 
             @NotBlank(message = "Password is required")
-            @Size(min = 6, message = "Password must be at least 6 characters")
+            @Size(min = 8, max = 128, message = "Password must be between 8 and 128 characters")
             String password,
 
             @NotBlank(message = "Driving license number is required")
