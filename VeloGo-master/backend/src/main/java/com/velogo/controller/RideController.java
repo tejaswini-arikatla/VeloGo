@@ -55,6 +55,16 @@ public class RideController {
         return ResponseEntity.ok(rideService.getRideDetails(rideId, userDetails.getId()));
     }
 
+    @PostMapping("/{rideId}/rate")
+    @Operation(summary = "Submit a star rating (1-5) and feedback for a completed ride")
+    public ResponseEntity<RideDtos.RatingDto> rateRide(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String rideId,
+            @Valid @RequestBody RideDtos.RateRideRequest req
+    ) {
+        return ResponseEntity.ok(rideService.rateRide(userDetails.getId(), rideId, req));
+    }
+
     @PostMapping("/{rideId}/cancel")
     @Operation(summary = "Cancel an active ride with reason")
     public ResponseEntity<RideDtos.RideDto> cancelRide(

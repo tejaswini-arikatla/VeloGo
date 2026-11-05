@@ -107,6 +107,22 @@ public class RideDtos {
             @NotBlank String reason
     ) {}
 
+    public record RateRideRequest(
+            @jakarta.validation.constraints.NotNull(message = "Score is required")
+            @jakarta.validation.constraints.Min(value = 1, message = "Minimum score is 1")
+            @jakarta.validation.constraints.Max(value = 5, message = "Maximum score is 5")
+            Integer score,
+            String feedback
+    ) {}
+
+    public record RatingDto(
+            String id,
+            String rideId,
+            Integer score,
+            String feedback,
+            String createdAt
+    ) {}
+
     public record RideDto(
             String id,
             String customerId,
