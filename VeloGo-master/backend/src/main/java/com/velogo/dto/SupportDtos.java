@@ -51,4 +51,19 @@ public class SupportDtos {
             String createdAt,
             String updatedAt
     ) {}
+
+    public record TriggerSosRequest(
+            @NotBlank String rideId,
+            Double latitude,
+            Double longitude,
+            String emergencyNote
+    ) {}
+
+    public record SosAlertResponse(
+            String ticketId,
+            String rideId,
+            String status,
+            String emergencyMessage,
+            String triggeredAt
+    ) {}
 }

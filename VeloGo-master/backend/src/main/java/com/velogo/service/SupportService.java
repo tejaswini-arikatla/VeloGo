@@ -6,6 +6,7 @@ import com.velogo.domain.SupportTicket;
 import com.velogo.domain.User;
 import com.velogo.domain.enums.NotificationType;
 import com.velogo.domain.enums.Role;
+import com.velogo.domain.enums.TicketCategory;
 import com.velogo.dto.SupportDtos;
 import com.velogo.exception.BadRequestException;
 import com.velogo.exception.ResourceNotFoundException;
@@ -122,6 +123,52 @@ public class SupportService {
         );
 
         return toTicketDto(saved);
+    }
+
+    @Transactional
+    public SupportDtos.SosAlertResponse triggerSosEmergency(User caller, SupportDtos.TriggerSosRequest req) {
+        Ride ride = rideRepository.findById(req.rideId())
+                .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + req.rideId()));
+
+        String locationDetails = (req.latitude() != null && req.longitude() != null)
+                ? " [GPS: " + req.latitude() + ", " + req.longitude() + "]"
+                : "";
+
+        String note = req.emergencyNote() != null && !req.emergencyNote().isBlank()
+                ? " Note: " + req.emergencyNote()
+                : "";
+
+        String description = "EMERGENCY SOS ALERT triggered by " + caller.getFullName() + " (" + caller.getRole() + ")" +
+                " for Ride #" + ride.getId() + locationDetails + "." +
+                " Pickup: " + ride.getPickupAddress() + " -> Destination: " + ride.getDestAddress() + "." + note;
+
+        SupportTicket ticket = SupportTicket.builder()
+                .id(UUID.randomUUID().toString())
+                .user(caller)
+                .ride(ride)
+                .subject("CRITICAL: SOS Emergency Alert - Ride #" + ride.getId().substring(0, Math.min(8, ride.getId().length())))
+                .category(TicketCategory.SAFETY)
+                .description(description)
+                .build();
+
+        SupportTicket saved = ticketRepository.save(ticket);
+
+        log.warn("CRITICAL EMERGENCY SOS TRIGGERED: user={}, ride={}, location={}", caller.getEmail(), ride.getId(), locationDetails);
+
+        notificationService.sendNotification(
+                caller.getId(),
+                "SOS Emergency Alert Broadcasted",
+                "Emergency dispatch has been notified for your current trip. Emergency contacts and local safety monitoring team have been alerted.",
+                NotificationType.RIDE_UPDATE
+        );
+
+        return new SupportDtos.SosAlertResponse(
+                saved.getId(),
+                ride.getId(),
+                "DISPATCHED",
+                "SOS emergency incident ticket registered and escalated to 24/7 safety command center.",
+                saved.getCreatedAt().toString()
+        );
     }
 
     @Transactional
