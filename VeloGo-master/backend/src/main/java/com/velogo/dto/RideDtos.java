@@ -107,6 +107,15 @@ public class RideDtos {
             @NotBlank String reason
     ) {}
 
+    public record RideStatusHistoryDto(
+            String id,
+            String rideId,
+            RideStatus fromStatus,
+            RideStatus toStatus,
+            String notes,
+            String createdAt
+    ) {}
+
     public record RideDto(
             String id,
             String customerId,

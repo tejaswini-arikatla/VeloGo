@@ -55,6 +55,15 @@ public class RideController {
         return ResponseEntity.ok(rideService.getRideDetails(rideId, userDetails.getId()));
     }
 
+    @GetMapping("/{rideId}/timeline")
+    @Operation(summary = "Get immutable state transition timeline and status audit history for a ride")
+    public ResponseEntity<List<RideDtos.RideStatusHistoryDto>> getRideTimeline(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String rideId
+    ) {
+        return ResponseEntity.ok(rideService.getRideTimeline(userDetails.getId(), rideId));
+    }
+
     @PostMapping("/{rideId}/cancel")
     @Operation(summary = "Cancel an active ride with reason")
     public ResponseEntity<RideDtos.RideDto> cancelRide(
