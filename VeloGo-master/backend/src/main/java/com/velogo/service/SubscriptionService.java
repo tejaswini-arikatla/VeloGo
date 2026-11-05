@@ -172,6 +172,32 @@ public class SubscriptionService {
             String planName
     ) {}
 
+    public static final int DEFAULT_MAX_DAILY_PASS_RIDES = 4;
+
+    public int getDailyUsageCount(String userSubscriptionId, java.time.LocalDate date) {
+        java.time.LocalDateTime startOfDay = date.atStartOfDay();
+        java.time.LocalDateTime endOfDay = date.atTime(java.time.LocalTime.MAX);
+        return (int) usageRepository.countByUserSubscriptionIdAndUsedAtBetween(userSubscriptionId, startOfDay, endOfDay);
+    }
+
+    public SubscriptionDtos.SubscriptionDailyQuotaDto getDailyQuotaStatus(User user) {
+        List<UserSubscription> activeSubs = userSubscriptionRepository.findActiveSubscriptionsByUserId(user.getId());
+        if (activeSubs.isEmpty()) {
+            return new SubscriptionDtos.SubscriptionDailyQuotaDto(null, null, 0, DEFAULT_MAX_DAILY_PASS_RIDES, 0, false);
+        }
+        UserSubscription sub = activeSubs.get(0);
+        int dailyUsage = getDailyUsageCount(sub.getId(), java.time.LocalDate.now());
+        int remaining = Math.max(0, DEFAULT_MAX_DAILY_PASS_RIDES - dailyUsage);
+        return new SubscriptionDtos.SubscriptionDailyQuotaDto(
+                sub.getId(),
+                sub.getPlan().getName(),
+                dailyUsage,
+                DEFAULT_MAX_DAILY_PASS_RIDES,
+                remaining,
+                remaining > 0
+        );
+    }
+
     public Optional<SubscriptionDiscountResult> evaluateSubscriptionDiscount(String userId, BigDecimal baseFare) {
         List<UserSubscription> activeSubs = userSubscriptionRepository.findActiveSubscriptionsByUserId(userId);
         if (activeSubs.isEmpty()) {
@@ -180,6 +206,13 @@ public class SubscriptionService {
 
         UserSubscription sub = activeSubs.get(0);
         SubscriptionPlan plan = sub.getPlan();
+
+        // Check daily fair-use quota
+        int dailyUsage = getDailyUsageCount(sub.getId(), java.time.LocalDate.now());
+        if (dailyUsage >= DEFAULT_MAX_DAILY_PASS_RIDES) {
+            log.info("Daily commuter pass quota reached ({}/{}) for user {}", dailyUsage, DEFAULT_MAX_DAILY_PASS_RIDES, userId);
+            return Optional.empty();
+        }
 
         // 1. Free ride check
         if (sub.getRemainingFreeRides() != null && sub.getRemainingFreeRides() > 0) {

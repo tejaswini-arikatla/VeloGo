@@ -12,4 +12,6 @@ public interface SubscriptionUsageRepository extends JpaRepository<SubscriptionU
     List<SubscriptionUsage> findByUserSubscriptionIdOrderByUsedAtDesc(String userSubscriptionId);
 
     long countByUserSubscriptionId(String userSubscriptionId);
+
+    long countByUserSubscriptionIdAndUsedAtBetween(String userSubscriptionId, java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

@@ -100,4 +100,13 @@ public class SubscriptionDtos {
             String userEmail,
             String status
     ) {}
+
+    public record SubscriptionDailyQuotaDto(
+            String subscriptionId,
+            String planName,
+            int dailyUsageCount,
+            int maxDailyLimit,
+            int remainingDailyTrips,
+            boolean quotaAvailable
+    ) {}
 }
