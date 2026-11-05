@@ -58,6 +58,14 @@ public class CorporateController {
         return ResponseEntity.ok(corporateService.getCorporateDashboard(user));
     }
 
+    @GetMapping("/domain-check")
+    @Operation(summary = "Check if an email domain matches an active enterprise corporate account")
+    public ResponseEntity<CorporateDtos.CorporateDomainCheckResult> checkDomain(
+            @RequestParam String email
+    ) {
+        return ResponseEntity.ok(corporateService.checkDomainEligibility(email));
+    }
+
     @GetMapping("/companies")
     @Operation(summary = "List registered enterprise companies with optional status filter")
     public ResponseEntity<List<CorporateDtos.CompanyDto>> getAllCompanies(

@@ -182,4 +182,40 @@ public class CorporateServiceTest {
         assertEquals(CorporateApprovalStatus.APPROVED, ride.getCorporateApprovalStatus());
         verify(notificationService).sendNotification(eq("u-emp-1"), contains("Approved"), anyString(), eq(NotificationType.RIDE_UPDATE));
     }
+
+    @Test
+    @DisplayName("Should reject public webmail domains from corporate auto-enrollment")
+    void testCheckDomainEligibility_PublicDomain() {
+        CorporateDtos.CorporateDomainCheckResult result = corporateService.checkDomainEligibility("user@gmail.com");
+        assertFalse(result.domainRecognized());
+        assertFalse(result.autoJoinEligible());
+        assertTrue(result.message().contains("Public webmail provider"));
+    }
+
+    @Test
+    @DisplayName("Should recognize registered corporate domain")
+    void testCheckDomainEligibility_DirectMatch() {
+        when(companyRepository.findByDomainIgnoreCaseAndStatus("corp.com", CompanyStatus.ACTIVE))
+                .thenReturn(Optional.of(company));
+
+        CorporateDtos.CorporateDomainCheckResult result = corporateService.checkDomainEligibility("employee@corp.com");
+        assertTrue(result.domainRecognized());
+        assertTrue(result.autoJoinEligible());
+        assertEquals("comp-1", result.companyId());
+        assertEquals("Acme Corp", result.companyName());
+    }
+
+    @Test
+    @DisplayName("Should recognize corporate subdomain with parent domain fallback")
+    void testCheckDomainEligibility_SubdomainMatch() {
+        when(companyRepository.findByDomainIgnoreCaseAndStatus("eng.corp.com", CompanyStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+        when(companyRepository.findByDomainIgnoreCaseAndStatus("corp.com", CompanyStatus.ACTIVE))
+                .thenReturn(Optional.of(company));
+
+        CorporateDtos.CorporateDomainCheckResult result = corporateService.checkDomainEligibility("dev@eng.corp.com");
+        assertTrue(result.domainRecognized());
+        assertTrue(result.autoJoinEligible());
+        assertEquals("comp-1", result.companyId());
+    }
 }
