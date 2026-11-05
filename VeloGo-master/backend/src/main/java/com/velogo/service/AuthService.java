@@ -183,6 +183,10 @@ public class AuthService {
 
     @Transactional
     public AuthDtos.AuthResponse refreshAccessToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BadRequestException("Refresh token cannot be null or empty.");
+        }
+
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new UnauthorizedException("Invalid or expired refresh token.");
         }
@@ -191,14 +195,26 @@ public class AuthService {
                 .orElseThrow(() -> new UnauthorizedException("Revoked or unknown refresh token."));
 
         if (stored.getExpiresAt().isBefore(LocalDateTime.now())) {
+            stored.setRevoked(true);
+            refreshTokenRepository.save(stored);
             throw new UnauthorizedException("Refresh token has expired. Please sign in again.");
         }
 
         User user = stored.getUser();
-        String newAccessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
-        AuthDtos.UserDto userDto = buildUserDto(user);
+        if (!user.isActive()) {
+            throw new UnauthorizedException("Your account has been deactivated. Please contact support.");
+        }
 
-        return new AuthDtos.AuthResponse(newAccessToken, refreshToken, "Bearer", userDto);
+        // Rotate refresh token to prevent replay attacks
+        stored.setRevoked(true);
+        refreshTokenRepository.save(stored);
+
+        String newAccessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+        saveRefreshToken(user, newRefreshToken);
+
+        AuthDtos.UserDto userDto = buildUserDto(user);
+        return new AuthDtos.AuthResponse(newAccessToken, newRefreshToken, "Bearer", userDto);
     }
 
     @Transactional
