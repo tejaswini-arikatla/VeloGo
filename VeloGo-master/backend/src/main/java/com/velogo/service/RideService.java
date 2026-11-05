@@ -502,8 +502,20 @@ public class RideService {
 
         RideStatus prevStatus = ride.getStatus();
         ride.setStatus(RideStatus.CANCELLED);
-        ride.setCancellationReason(reason);
+        ride.setCancellationReason(reason != null && !reason.trim().isBlank() ? reason.trim() : "Cancelled by user");
         ride.setCancelledBy(isCustomer ? "CUSTOMER" : "CAPTAIN");
+
+        // Calculate dynamic cancellation fee if customer cancelled after grace window
+        BigDecimal fee = BigDecimal.ZERO;
+        if (isCustomer && (prevStatus == RideStatus.ACCEPTED || prevStatus == RideStatus.ARRIVED)) {
+            boolean arrivedOrPastGracePeriod = prevStatus == RideStatus.ARRIVED ||
+                    (ride.getAcceptedAt() != null && ride.getAcceptedAt().plusMinutes(3).isBefore(LocalDateTime.now()));
+            if (arrivedOrPastGracePeriod) {
+                fee = new BigDecimal("25.00");
+                log.info("Cancellation fee of {} charged for ride {}", fee, rideId);
+            }
+        }
+        ride.setCancellationFee(fee);
         Ride updated = rideRepository.save(ride);
 
         // Release captain if one was assigned
@@ -674,7 +686,8 @@ public class RideService {
                 r.getCorporateApprovalStatus() != null ? r.getCorporateApprovalStatus() : com.velogo.domain.enums.CorporateApprovalStatus.NOT_REQUIRED,
                 r.isRequiresApproval(),
                 r.getSubscriptionDiscount() != null ? r.getSubscriptionDiscount() : BigDecimal.ZERO,
-                r.isSubscriptionFreeRide()
+                r.isSubscriptionFreeRide(),
+                r.getCancellationFee() != null ? r.getCancellationFee() : BigDecimal.ZERO
         );
     }
 
