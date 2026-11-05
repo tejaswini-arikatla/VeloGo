@@ -137,8 +137,8 @@ export const FareCard: React.FC<FareCardProps> = ({ estimate, isSelected, onSele
             <span>₹{Number(estimate.bookingFee || 0).toFixed(2)}</span>
           </div>
           {Number(estimate.discountAmount || 0) > 0 && (
-            <div className="flex justify-between text-emerald-600 font-semibold">
-              <span>Promotional Coupon</span>
+            <div className="flex justify-between text-emerald-600 font-semibold" data-testid="promotional-discount-row">
+              <span>Promotional Discount</span>
               <span>-₹{Number(estimate.discountAmount || 0).toFixed(2)}</span>
             </div>
           )}
