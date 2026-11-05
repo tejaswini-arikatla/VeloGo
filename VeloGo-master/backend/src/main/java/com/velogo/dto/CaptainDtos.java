@@ -8,8 +8,16 @@ import java.math.BigDecimal;
 public class CaptainDtos {
 
     public record UpdateLocationRequest(
-            @NotNull BigDecimal latitude,
-            @NotNull BigDecimal longitude,
+            @NotNull(message = "Latitude is required")
+            @jakarta.validation.constraints.DecimalMin(value = "-90.0", message = "Latitude must be >= -90.0")
+            @jakarta.validation.constraints.DecimalMax(value = "90.0", message = "Latitude must be <= 90.0")
+            BigDecimal latitude,
+
+            @NotNull(message = "Longitude is required")
+            @jakarta.validation.constraints.DecimalMin(value = "-180.0", message = "Longitude must be >= -180.0")
+            @jakarta.validation.constraints.DecimalMax(value = "180.0", message = "Longitude must be <= 180.0")
+            BigDecimal longitude,
+
             BigDecimal heading
     ) {}
 
