@@ -47,6 +47,8 @@ public class RideService {
     private final SubscriptionService subscriptionService;
     private final CorporateService corporateService;
     private final CompanyRepository companyRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.velogo.repository.ServiceAreaRepository serviceAreaRepository;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -189,6 +191,10 @@ public class RideService {
         List<MatchingService.CandidateCaptain> nearbyCaptains = matchingService.findNearbyCaptains(
                 req.vehicleCategory(), req.pickupLat(), req.pickupLng()
         );
+
+        if (!isLocationServed(req.pickupLat(), req.pickupLng())) {
+            throw new BadRequestException("Pickup location is currently outside active VeloGo service operational zones.");
+        }
 
         // Strict availability guard for Women-Only: NEVER silently fall back
         if (req.vehicleCategory() == VehicleCategory.WOMEN_BIKE && nearbyCaptains.isEmpty()) {
@@ -527,6 +533,34 @@ public class RideService {
         RideDtos.RideDto dto = toRideDto(updated);
         eventPublisher.publishRideUpdate(rideId, dto);
         return dto;
+    }
+
+    public boolean isLocationServed(BigDecimal lat, BigDecimal lng) {
+        if (serviceAreaRepository == null || lat == null || lng == null) return true;
+        List<com.velogo.domain.ServiceArea> areas = serviceAreaRepository.findAllByActiveTrue();
+        if (areas == null || areas.isEmpty()) return true;
+
+        for (com.velogo.domain.ServiceArea area : areas) {
+            double dist = haversineDistanceKm(
+                    lat.doubleValue(), lng.doubleValue(),
+                    area.getCenterLatitude().doubleValue(), area.getCenterLongitude().doubleValue()
+            );
+            if (dist <= area.getRadiusKm().doubleValue()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private double haversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371;
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
 
     @Transactional(readOnly = true)
