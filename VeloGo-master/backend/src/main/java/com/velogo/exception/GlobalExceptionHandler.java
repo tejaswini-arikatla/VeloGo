@@ -112,6 +112,60 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
 
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(jakarta.validation.ConstraintViolationException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getConstraintViolations().forEach(cv -> {
+            String prop = cv.getPropertyPath() != null ? cv.getPropertyPath().toString() : "parameter";
+            errors.put(prop, cv.getMessage());
+        });
+        ErrorResponse res = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Validation Failed",
+                "Constraint validation failed on request parameters",
+                LocalDateTime.now(),
+                errors
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        ErrorResponse res = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Malformed Request",
+                "Malformed JSON request body or unparseable field values",
+                LocalDateTime.now(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        String msg = "Parameter '" + ex.getName() + "' with value '" + ex.getValue() + "' could not be converted to required type";
+        ErrorResponse res = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Type Mismatch",
+                msg,
+                LocalDateTime.now(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParams(org.springframework.web.bind.MissingServletRequestParameterException ex) {
+        ErrorResponse res = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Missing Parameter",
+                "Required parameter '" + ex.getParameterName() + "' is missing",
+                LocalDateTime.now(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+    }
+
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Throwable ex) {
         org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Unhandled error: ", ex);
