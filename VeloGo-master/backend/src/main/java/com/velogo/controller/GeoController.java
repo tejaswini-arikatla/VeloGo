@@ -19,6 +19,7 @@ public class GeoController {
 
     private final GeocodingService geocodingService;
     private final RoutingService routingService;
+    private final com.velogo.repository.ServiceAreaRepository serviceAreaRepository;
 
     @GetMapping("/search")
     @Operation(summary = "Search real places, landmarks, and addresses with autocomplete")
@@ -41,6 +42,12 @@ public class GeoController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/service-areas")
+    @Operation(summary = "Get list of active operational service areas and geofence boundaries")
+    public ResponseEntity<List<com.velogo.domain.ServiceArea>> getActiveServiceAreas() {
+        return ResponseEntity.ok(serviceAreaRepository.findAllByActiveTrue());
     }
 
     @GetMapping("/route")
